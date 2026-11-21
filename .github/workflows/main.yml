@@ -100,14 +100,13 @@ jobs:
           export CROSS_COMPILE=aarch64-linux-androidkernel-
           export CROSS_COMPILE_ARM32=arm-linux-androideabi-
           export CLANG_TRIPLE=aarch64-linux-gnu-
-          export KCFLAGS="-Wno-error -I$PWD/drivers/misc/mediatek/connectivity/common/include -I$PWD/drivers/misc/mediatek/connectivity/common/linux/include"
+          export KCFLAGS="-Wno-error"
           
           make -j$(nproc) ARCH=arm64 SUBARCH=arm64 CC=clang LD=ld.lld O=out atom_user_defconfig
 
           scripts/config --file out/.config \
             --disable CONFIG_CC_STACKPROTECTOR_STRONG \
             --disable CONFIG_ANDROID_PARANOID_NETWORK \
-            --disable LTO_CLANG \
             --enable CONFIG_SYSVIPC \
             --enable CONFIG_IPC_NS \
             --enable CONFIG_USER_NS \
