@@ -22,46 +22,7 @@ jobs:
           wget -q -O arm32.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz
           mkdir -p /opt/gcc-arm32 && tar -xf arm32.tar.gz -C /opt/gcc-arm32
 
-      - name: 拉取 MTK 驱动模块
-        run: |
-          mkdir -p vendor/mediatek
-          git clone --depth=1 --branch cezanne-r-oss \
-            https://github.com/MiCode/MTK_kernel_modules.git \
-            vendor/mediatek/kernel_modules
-          ls vendor/mediatek/kernel_modules/connectivity/
-          tree vendor/mediatek/kernel_modules/
-      - name: 手动创建 WLAN/BT/GPS 软链接
-        run: |
-          SRC_DIR="drivers/misc/mediatek/connectivity"
-          VENDOR_DIR="vendor/mediatek/kernel_modules/connectivity"
-
-          rm -rf "$SRC_DIR/wlan_drv_gen4m" "$SRC_DIR/bt" "$SRC_DIR/gps_drv"
-
-          ln -snf "$(realpath $VENDOR_DIR/wlan/core/gen4m)" "$SRC_DIR/wlan_drv_gen4m"
-          ln -snf "$(realpath $VENDOR_DIR/bt/mt66xx/legacy)" "$SRC_DIR/bt"
-          ln -snf "$(realpath $VENDOR_DIR/gps)" "$SRC_DIR/gps_drv"
-
-          echo "=== 修改后：创建好的软链接 ==="
-          ls -la "$SRC_DIR/" | grep -E "wlan_drv_gen4m|bt|gps_drv"
-      - name: 修改驱动 Makefile 的 TOP
-        run: |
-          for f in \
-            vendor/mediatek/kernel_modules/connectivity/wlan/core/gen4m/Makefile \
-            vendor/mediatek/kernel_modules/connectivity/wlan/adaptor/Makefile \
-            vendor/mediatek/kernel_modules/connectivity/bt/mt66xx/legacy/Makefile \
-            vendor/mediatek/kernel_modules/connectivity/fmradio/Makefile \
-            vendor/mediatek/kernel_modules/connectivity/gps/Makefile; do
-            if [ -f "$f" ]; then
-              sed -i 's|TOP[[:space:]]*:=[[:space:]]*\$(srctree)/\.\.|TOP := $(srctree)/|' "$f"
-            fi
-          done
-      - name: 修改 GPS/BT 驱动为内建
-        run: |
-          sed -i 's/^obj-m += \$(MODULE_NAME)\.o/obj-y += $(MODULE_NAME).o/' vendor/mediatek/kernel_modules/connectivity/gps/Makefile
-          sed -i 's/^obj-m += \$(MODULE_NAME)\.o/obj-y += $(MODULE_NAME).o/' vendor/mediatek/kernel_modules/connectivity/bt/mt66xx/legacy/Makefile
-          sed -i 's/static void __exit gps_emi_mod_exit/static void gps_emi_mod_exit/' vendor/mediatek/kernel_modules/connectivity/gps/gps_emi.c
-          sed -i 's/static void __exit gps_fw_log_exit/static void gps_fw_log_exit/' vendor/mediatek/kernel_modules/connectivity/gps/fw_log_gps.c
-
+      
       - name: 修复 cmdq_handle 指针强转
         run: |
           F="drivers/gpu/drm/mediatek/mtk_drm_crtc.c"
@@ -140,6 +101,7 @@ jobs:
           scripts/config --file out/.config \
             --disable CONFIG_CC_STACKPROTECTOR_STRONG \
             --disable CONFIG_ANDROID_PARANOID_NETWORK \
+            --disable LTO_CLANG \
             --enable CONFIG_SYSVIPC \
             --enable CONFIG_IPC_NS \
             --enable CONFIG_USER_NS \
@@ -176,7 +138,7 @@ jobs:
       - name: 上传编译产物
         uses: actions/upload-artifact@v4
         with:
-          name: Sukisu_Nova with Droidspaces
+          name: BakaSU with Droidspaces
           path: |
             out/arch/arm64/boot/Image
             out/arch/arm64/boot/Image.gz
